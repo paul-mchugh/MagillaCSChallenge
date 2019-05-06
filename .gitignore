@@ -1,0 +1,3 @@
+##ignore these folders
+.idea
+cmake-build-debug
