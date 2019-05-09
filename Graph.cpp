@@ -140,6 +140,7 @@ Graph::Graph(const Graph &other) : lastUID(other.lastUID)
 	for (const std::pair<const int, std::unique_ptr<Vertex>> &vtxPair : other.vertexSet)
 	{
 		vertexSet[vtxPair.first] = std::make_unique<Vertex>(*vtxPair.second);
+		vertexSet[vtxPair.first]->partOf=this;
 	}
 }
 
@@ -150,6 +151,7 @@ Graph& Graph::operator=(const Graph &other)
 	for (const std::pair<const int, std::unique_ptr<Vertex>> &vtxPair : other.vertexSet)
 	{
 		vertexSet[vtxPair.first] = std::make_unique<Vertex>(*vtxPair.second);
+		vertexSet[vtxPair.first]->partOf=this;
 	}
 	return *this;
 }
