@@ -7,6 +7,7 @@
 
 #include <set>
 #include <map>
+#include <memory>
 
 class Graph;
 class Edge;
@@ -55,7 +56,7 @@ public:
 class Graph
 {
 	//graph is represented in adjacency list format
-	std::map<int,Vertex> vertexSet;
+	std::map<int,std::unique_ptr<Vertex>> vertexSet;
 	int lastUID = 0;
 
 public:
@@ -75,7 +76,5 @@ public:
 	void invert();
 	
 };
-
-
 
 #endif //MAGILLACSCHALLENGE_GRAPH_H

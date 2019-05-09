@@ -84,9 +84,9 @@ std::set<Edge> Graph::getEdgeSet()
 {
 	std::set<Edge> allEdges = std::set<Edge>();
 	
-	for (std::pair<const int,Vertex> srcPair : vertexSet)
+	for (std::pair<const int,std::unique_ptr<Vertex>> &srcPair : vertexSet)
 	{
-		Vertex &src = srcPair.second;
+		Vertex &src = *srcPair.second;
 		
 		for (int dstID : src.adjacencyList)
 		{
@@ -101,9 +101,9 @@ std::set<Vertex*> Graph::getVertexSet()
 {
 	std::set<Vertex*> vertexRefs;
 	
-	for(std::pair<const int,Vertex> vtxPair : vertexSet)
+	for(std::pair<const int,std::unique_ptr<Vertex>> &vtxPair : vertexSet)
 	{
-		vertexRefs.insert(&vtxPair.second);
+		vertexRefs.insert(&(*vtxPair.second));
 	}
 	
 	return vertexRefs;
@@ -113,9 +113,9 @@ std::set<Vertex*> Graph::getHeads()
 {
 	std::set<Vertex*> vertexRefs;
 	
-	for(std::pair<const int,Vertex> vtxPair : vertexSet)
+	for(std::pair<const int,std::unique_ptr<Vertex>> &vtxPair : vertexSet)
 	{
-		Vertex &vtx = vtxPair.second;
+		Vertex &vtx = *vtxPair.second;
 		
 		if(vtx.incidenceList.empty()) vertexRefs.insert(&vtx);
 	}
@@ -144,7 +144,7 @@ bool Graph::removeEdge(Vertex &src, Vertex &dst)
 	if (vertexSet.count(src.uid)==1&& vertexSet.count(dst.uid)==1&& src.adjacencyList.count(dst.uid)==1)
 	{
 		src.adjacencyList.erase(dst.uid);
-		dst.adjacencyList.erase(src.uid);
+		dst.incidenceList.erase(src.uid);
 		return true;
 	}
 	else
@@ -169,20 +169,31 @@ void Graph::removeEdgeSet(std::set<Edge> edgeSet)
 Vertex &Graph::createVertex(int label)
 {
 	int id = lastUID++;
-	Vertex vtx = Vertex(this,id,label);
-	vertexSet[id] = vtx;
-	return vertexSet[id];
+	vertexSet[id] = std::unique_ptr<Vertex>(new Vertex(this,id,label));
+	
+	return *vertexSet[id];
 }
 
 Vertex &Graph::getVertexByUID(int uid)
 {
-	return vertexSet[uid];
+	return *vertexSet[uid];
 }
 
 bool Graph::removeVertex(Vertex &v)
 {
 	if (vertexSet.count(v.uid)==1)
 	{
+		//remove self from children's incidence lists
+		for (Vertex *child : v.getChildren())
+		{
+			child->incidenceList.erase(v.uid);
+		}
+		//remove self from parents adjacency list
+		for (Vertex *parent : v.getParents())
+		{
+			parent->adjacencyList.erase(v.uid);
+		}
+		
 		vertexSet.erase(v.uid);
 		return true;
 	}
@@ -194,19 +205,26 @@ bool Graph::removeVertex(Vertex &v)
 
 void Graph::removeIsolatedVertices()
 {
-	for (auto it = vertexSet.begin();it!=vertexSet.end();it++)
+	for (auto it = vertexSet.begin();it!=vertexSet.end();)
 	{
-		Vertex vtx = (*it).second;
-		if (vtx.adjacencyList.empty() && vtx.incidenceList.empty()) vertexSet.erase(it);
+		Vertex &vtx = *(*it).second;
+		if (vtx.adjacencyList.empty() && vtx.incidenceList.empty())
+		{
+			it = vertexSet.erase(it);
+		}
+		else
+		{
+			it++;
+		}
 	}
 }
 
 void Graph::invert()
 {
 	std::set<int> swp;
-	for(std::pair<const int,Vertex> vtxPair : vertexSet)
+	for(std::pair<const int,std::unique_ptr<Vertex>> &vtxPair : vertexSet)
 	{
-		Vertex vtx = vtxPair.second;
+		Vertex &vtx = *vtxPair.second;
 		swp = std::move(vtx.incidenceList);
 		vtx.incidenceList = std::move(vtx.adjacencyList);
 		vtx.adjacencyList = std::move(swp);
