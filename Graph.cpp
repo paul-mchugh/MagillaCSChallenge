@@ -1,3 +1,5 @@
+#include <memory>
+
 //
 // Created by paulp on 5/6/2019.
 //
@@ -70,12 +72,12 @@ bool Edge::operator<(const Edge &other) const
 	return src==other.src ? dst<other.dst : src<other.src;
 }
 
-Vertex& Edge::getSrc()
+Vertex& Edge::getSrc() const
 {
 	return src;
 }
 
-Vertex& Edge::getDst()
+Vertex& Edge::getDst() const
 {
 	return dst;
 }
@@ -90,11 +92,21 @@ std::set<Edge> Graph::getEdgeSet()
 		
 		for (int dstID : src.adjacencyList)
 		{
-			allEdges.insert(Edge(src,getVertexByUID(dstID)));
+			allEdges.insert(LogicalEdge(src,getVertexByUID(dstID)));
 		}
 	}
 	
 	return allEdges;
+}
+
+bool LogicalEdge::operator==(const Edge &other) const
+{
+	return getSrc().getLabel() == other.getSrc().getLabel() && getDst().getLabel() == other.getDst().getLabel();
+}
+
+bool LogicalEdge::operator<(const Edge &other) const
+{
+	return getSrc().getLabel() != other.getSrc().getLabel() ? getSrc().getLabel() < other.getSrc().getLabel() : getDst().getLabel() < other.getDst().getLabel();
 }
 
 std::set<Vertex*> Graph::getVertexSet()
@@ -121,6 +133,34 @@ std::set<Vertex*> Graph::getHeads()
 	}
 	
 	return vertexRefs;
+}
+
+Graph::Graph(const Graph &other) : lastUID(other.lastUID)
+{
+	for (const std::pair<const int, std::unique_ptr<Vertex>> &vtxPair : other.vertexSet)
+	{
+		vertexSet[vtxPair.first] = std::make_unique<Vertex>(*vtxPair.second);
+	}
+}
+
+Graph& Graph::operator=(const Graph &other)
+{
+	lastUID = other.lastUID;
+	vertexSet = std::map<int,std::unique_ptr<Vertex>>();
+	for (const std::pair<const int, std::unique_ptr<Vertex>> &vtxPair : other.vertexSet)
+	{
+		vertexSet[vtxPair.first] = std::make_unique<Vertex>(*vtxPair.second);
+	}
+	return *this;
+}
+
+Graph::Graph(Graph &&other) noexcept : lastUID(other.lastUID), vertexSet(std::move(other.vertexSet))
+{}
+
+Graph& Graph::operator=(Graph &&other) noexcept
+{
+	lastUID = other.lastUID;
+	vertexSet = std::move(other.vertexSet);
 }
 
 bool Graph::addEdge(Vertex &src, Vertex &dst)

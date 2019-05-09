@@ -43,14 +43,23 @@ class Edge
 	Vertex &dst;
 	//friend the Graph class so it can call our private constructor
 	friend class Graph;
-	
+protected:
 	Edge(Vertex& src, Vertex& dst);
 	
 public:
 	bool operator==(const Edge &other) const;
 	bool operator<(const Edge &other) const;
-	Vertex& getSrc();
-	Vertex& getDst();
+	Vertex& getSrc() const;
+	Vertex& getDst() const;
+};
+
+class LogicalEdge : public Edge
+{
+	friend class Graph;
+	LogicalEdge(Vertex& src, Vertex& dst) : Edge(src,dst) {};
+public:
+	bool operator==(const Edge &other) const;
+	bool operator<(const Edge &other) const;
 };
 
 class Graph
@@ -60,6 +69,12 @@ class Graph
 	int lastUID = 0;
 
 public:
+	//default constructor, copy constructor, copy assign constructor, move constructor, and move assign constructor
+	Graph() = default;
+	Graph(const Graph &other);
+	Graph& operator=(const Graph &other);
+	Graph(Graph &&other) noexcept;
+	Graph& operator=(Graph &&other) noexcept;
 	//getters
 	std::set<Edge> getEdgeSet();
 	std::set<Vertex*> getVertexSet();
