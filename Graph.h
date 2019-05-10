@@ -31,14 +31,17 @@ public:
 	bool operator==(const Vertex &other) const;
 	bool operator<(const Vertex &other) const;
 	
-	int getLabel();
+	int getLabel() const;
 	std::set<Vertex*> getChildren();
 	std::set<Vertex*> getParents();
-	Vertex& getParent();
+	std::set<Edge> getAdjacentEdges();
+	std::set<Edge> getIncidentEdges();
 };
 
 class Edge
 {
+	friend class Vertex;
+	
 	Vertex &src;
 	Vertex &dst;
 	//friend the Graph class so it can call our private constructor
@@ -51,15 +54,6 @@ public:
 	bool operator<(const Edge &other) const;
 	Vertex& getSrc() const;
 	Vertex& getDst() const;
-};
-
-class LogicalEdge : public Edge
-{
-	friend class Graph;
-	LogicalEdge(Vertex& src, Vertex& dst) : Edge(src,dst) {};
-public:
-	bool operator==(const Edge &other) const;
-	bool operator<(const Edge &other) const;
 };
 
 class Graph
@@ -90,6 +84,12 @@ public:
 	void removeIsolatedVertices(); //this method removes all vertices that have an in degree and out degree of 0
 	void invert();
 	
+};
+
+//logically Less Ordering Functor
+struct LogicallyLess
+{
+	bool operator()(const Edge &lhs, const Edge &rhs) const;
 };
 
 #endif //MAGILLACSCHALLENGE_GRAPH_H

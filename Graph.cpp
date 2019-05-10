@@ -21,7 +21,7 @@ bool Vertex::operator<(const Vertex &other) const
 	return label<other.label||uid<other.uid;
 }
 
-int Vertex::getLabel()
+int Vertex::getLabel() const
 {
 	return label;
 }
@@ -50,11 +50,26 @@ std::set<Vertex*> Vertex::getParents()
 	return res;
 }
 
-Vertex& Vertex::getParent()
+std::set<Edge> Vertex::getAdjacentEdges()
 {
-	int parentUID = *adjacencyList.begin();
+	std::set<Edge> res;
 	
-	return partOf->getVertexByUID(parentUID);
+	for (Vertex* child : getChildren())
+	{
+		res.insert(Edge(*this,*child));
+	}
+	return res;
+}
+
+std::set<Edge> Vertex::getIncidentEdges()
+{
+	std::set<Edge> res;
+	
+	for (Vertex* parent : getChildren())
+	{
+		res.insert(Edge(*this,*parent));
+	}
+	return res;
 }
 
 //Edge implementation
@@ -92,21 +107,11 @@ std::set<Edge> Graph::getEdgeSet()
 		
 		for (int dstID : src.adjacencyList)
 		{
-			allEdges.insert(LogicalEdge(src,getVertexByUID(dstID)));
+			allEdges.insert(Edge(src,getVertexByUID(dstID)));
 		}
 	}
 	
 	return allEdges;
-}
-
-bool LogicalEdge::operator==(const Edge &other) const
-{
-	return getSrc().getLabel() == other.getSrc().getLabel() && getDst().getLabel() == other.getDst().getLabel();
-}
-
-bool LogicalEdge::operator<(const Edge &other) const
-{
-	return getSrc().getLabel() != other.getSrc().getLabel() ? getSrc().getLabel() < other.getSrc().getLabel() : getDst().getLabel() < other.getDst().getLabel();
 }
 
 std::set<Vertex*> Graph::getVertexSet()
@@ -271,4 +276,13 @@ void Graph::invert()
 		vtx.incidenceList = std::move(vtx.adjacencyList);
 		vtx.adjacencyList = std::move(swp);
 	}
+}
+
+//islocically less is true if the left source label is less than the right src label.
+//if they are equal then it is true if the left dst label is less than the right dst label
+bool LogicallyLess::operator()(const Edge &lhs, const Edge &rhs) const
+{
+	int leftSrcLabel = lhs.getSrc().getLabel();
+	int rightSrcLabel = rhs.getSrc().getLabel();
+	return leftSrcLabel==rightSrcLabel ? lhs.getDst().getLabel()<rhs.getDst().getLabel() : leftSrcLabel<rightSrcLabel;
 }
