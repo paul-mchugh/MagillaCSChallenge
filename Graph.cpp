@@ -9,7 +9,10 @@
 //Vertex implementation
 
 Vertex::Vertex(Graph* partOf, int uid, int label) : partOf(partOf), uid(uid), label(label)
-{}
+{
+	adjacencyList = std::set<Vertex*>();
+	incidenceList = std::set<Vertex*>();
+}
 
 bool Vertex::operator==(const Vertex &other) const
 {
@@ -28,26 +31,12 @@ int Vertex::getLabel() const
 
 std::set<Vertex*> Vertex::getChildren()
 {
-	std::set<Vertex*> res;
-	
-	for (int childUID : adjacencyList)
-	{
-		res.insert(&partOf->getVertexByUID(childUID));
-	}
-	
-	return res;
+	return std::set<Vertex*>(adjacencyList);
 }
 
 std::set<Vertex*> Vertex::getParents()
 {
-	std::set<Vertex*> res;
-	
-	for (int parentUID : incidenceList)
-	{
-		res.insert(&partOf->getVertexByUID(parentUID));
-	}
-	
-	return res;
+	return std::set<Vertex*>(incidenceList);
 }
 
 std::set<Edge> Vertex::getAdjacentEdges()
@@ -97,17 +86,17 @@ Vertex& Edge::getDst() const
 	return dst;
 }
 
-std::set<Edge> Graph::getEdgeSet()
+std::set<Edge> Graph::getEdgeSet() const
 {
 	std::set<Edge> allEdges = std::set<Edge>();
 	
-	for (std::pair<const int,std::unique_ptr<Vertex>> &srcPair : vertexSet)
+	for (const std::pair<const int,std::unique_ptr<Vertex>> &srcPair : vertexSet)
 	{
 		Vertex &src = *srcPair.second;
 		
-		for (int dstID : src.adjacencyList)
+		for (Vertex* dst : src.adjacencyList)
 		{
-			allEdges.insert(Edge(src,getVertexByUID(dstID)));
+			allEdges.insert(Edge(src,*dst));
 		}
 	}
 	
@@ -144,8 +133,22 @@ Graph::Graph(const Graph &other) : lastUID(other.lastUID)
 {
 	for (const std::pair<const int, std::unique_ptr<Vertex>> &vtxPair : other.vertexSet)
 	{
-		vertexSet[vtxPair.first] = std::make_unique<Vertex>(*vtxPair.second);
-		vertexSet[vtxPair.first]->partOf=this;
+		int vtxID = vtxPair.first;
+		vertexSet[vtxID] = std::make_unique<Vertex>(*vtxPair.second);
+		Vertex& vtx = *vertexSet[vtxID];
+		vtx.partOf = this;
+		vtx.adjacencyList = std::set<Vertex*>();
+		vtx.incidenceList = std::set<Vertex*>();
+	}
+	//copy the edges
+	for (Edge otherEdge : other.getEdgeSet())
+	{
+		Vertex &otherSrc = otherEdge.getSrc();
+		Vertex &otherDst = otherEdge.getDst();
+		Vertex *src = &(*vertexSet[otherSrc.uid]);
+		Vertex *dst = &(*vertexSet[otherDst.uid]);
+		src->adjacencyList.insert(dst);
+		dst->incidenceList.insert(src);
 	}
 }
 
@@ -155,8 +158,22 @@ Graph& Graph::operator=(const Graph &other)
 	vertexSet = std::map<int,std::unique_ptr<Vertex>>();
 	for (const std::pair<const int, std::unique_ptr<Vertex>> &vtxPair : other.vertexSet)
 	{
-		vertexSet[vtxPair.first] = std::make_unique<Vertex>(*vtxPair.second);
-		vertexSet[vtxPair.first]->partOf=this;
+		int vtxID = vtxPair.first;
+		vertexSet[vtxID] = std::make_unique<Vertex>(*vtxPair.second);
+		Vertex& vtx = *vertexSet[vtxID];
+		vtx.partOf = this;
+		vtx.adjacencyList = std::set<Vertex*>();
+		vtx.incidenceList = std::set<Vertex*>();
+	}
+	//copy the edges
+	for (Edge otherEdge : other.getEdgeSet())
+	{
+		Vertex &otherSrc = otherEdge.getSrc();
+		Vertex &otherDst = otherEdge.getDst();
+		Vertex *src = &(*vertexSet[otherSrc.uid]);
+		Vertex *dst = &(*vertexSet[otherDst.uid]);
+		src->adjacencyList.insert(dst);
+		dst->incidenceList.insert(src);
 	}
 	return *this;
 }
@@ -173,10 +190,10 @@ Graph& Graph::operator=(Graph &&other) noexcept
 bool Graph::addEdge(Vertex &src, Vertex &dst)
 {
 	//if src or dst don't exist or the edge src->dst already exists then return false else add it and return true
-	if (vertexSet.count(src.uid)==1&& vertexSet.count(dst.uid)==1&& src.adjacencyList.count(dst.uid)==0)
+	if (vertexSet.count(src.uid)==1&& vertexSet.count(dst.uid)==1&& src.adjacencyList.count(&dst)==0)
 	{
-		src.adjacencyList.insert(dst.uid);
-		dst.incidenceList.insert(src.uid);
+		src.adjacencyList.insert(&dst);
+		dst.incidenceList.insert(&src);
 		return true;
 	}
 	else
@@ -188,10 +205,10 @@ bool Graph::addEdge(Vertex &src, Vertex &dst)
 bool Graph::removeEdge(Vertex &src, Vertex &dst)
 {
 	//if src, dst, or the edge src->dst don't exist then return false otherwise cut the edge
-	if (vertexSet.count(src.uid)==1&& vertexSet.count(dst.uid)==1&& src.adjacencyList.count(dst.uid)==1)
+	if (vertexSet.count(src.uid)==1&& vertexSet.count(dst.uid)==1&& src.adjacencyList.count(&dst)==1)
 	{
-		src.adjacencyList.erase(dst.uid);
-		dst.incidenceList.erase(src.uid);
+		src.adjacencyList.erase(&dst);
+		dst.incidenceList.erase(&src);
 		return true;
 	}
 	else
@@ -233,12 +250,12 @@ bool Graph::removeVertex(Vertex &v)
 		//remove self from children's incidence lists
 		for (Vertex *child : v.getChildren())
 		{
-			child->incidenceList.erase(v.uid);
+			child->incidenceList.erase(&v);
 		}
 		//remove self from parents adjacency list
 		for (Vertex *parent : v.getParents())
 		{
-			parent->adjacencyList.erase(v.uid);
+			parent->adjacencyList.erase(&v);
 		}
 		
 		vertexSet.erase(v.uid);
@@ -268,7 +285,7 @@ void Graph::removeIsolatedVertices()
 
 void Graph::invert()
 {
-	std::set<int> swp;
+	std::set<Vertex*> swp;
 	for(std::pair<const int,std::unique_ptr<Vertex>> &vtxPair : vertexSet)
 	{
 		Vertex &vtx = *vtxPair.second;

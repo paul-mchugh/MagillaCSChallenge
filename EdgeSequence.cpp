@@ -69,9 +69,9 @@ std::string EdgeSequence::toStringRepresentation()
 	bool first = true;
 	
 	//reverse iterate through the list and append the sequence elements to the result description
-	for(auto it = backEdgeGroups.begin(); it!=backEdgeGroups.end(); it++)
+	for (std::set<Edge> &backEdgeGroup : backEdgeGroups)
 	{
-		const Edge& rEdge = *(*it).begin();
+		const Edge& rEdge = *backEdgeGroup.begin();
 		if(first)
 		{
 			result += std::to_string(rEdge.getDst().getLabel());

@@ -17,8 +17,8 @@ class Vertex
 	Graph *partOf;
 	int uid;
 	int label;
-	std::set<int> adjacencyList;//stores all vertices that are adjacent to this vertex
-	std::set<int> incidenceList;//stores all vertices that have edges incident upon this vertex
+	std::set<Vertex*> adjacencyList;//stores all vertices that are adjacent to this vertex
+	std::set<Vertex*> incidenceList;//stores all vertices that have edges incident upon this vertex
 	//friend the Graph class so it can call our private constructor
 	friend class Graph;
 	
@@ -70,7 +70,7 @@ public:
 	Graph(Graph &&other) noexcept;
 	Graph& operator=(Graph &&other) noexcept;
 	//getters
-	std::set<Edge> getEdgeSet();
+	std::set<Edge> getEdgeSet() const;
 	std::set<Vertex*> getVertexSet();
 	std::set<Vertex*> getHeads();
 	//manipulation functions
