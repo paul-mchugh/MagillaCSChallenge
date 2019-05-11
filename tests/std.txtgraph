@@ -1,0 +1,17 @@
+rt(6)		:l,r
+l(4)		:ll,lr
+ll(3)		:llr
+llr(1)		:llrl,llrr
+llrl(0)		:
+llrr(2)		:
+lr(5)		:lrr
+lrr(3)		:lrrr,lrrl
+lrrl(1)		:
+lrrr(1)		:lrrrr
+lrrrr(0)	:
+r(8)		:rr
+rr(12)		:rrl,rrr
+rrl(6)		:rrlr
+rrlr(4)		:
+rrr(2)		:
+#represents the graph in the the google docs document

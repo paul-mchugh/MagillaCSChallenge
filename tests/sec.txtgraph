@@ -1,0 +1,25 @@
+rt(1)       :l,r
+l(3)        :ll,lr
+ll(1)       :lll,llr
+lll(3)      :
+llr(2)      :
+lr(5)       :lrl,lrr
+lrl(4)      :
+lrr(7)      :
+r(5)        :rl,rr
+rl(3)       :rll,rlr
+rll(8)      :
+rlr(1)      :
+rr(7)       :rrl,rrr
+rrl(8)      :
+rrr(8)      :
+#represents the tree
+#
+#                      1
+#                    /   \
+#                  3       5
+#                 / \     / \
+#                1   5   3   7
+#               / \ / \ / \ / \
+#               3 2 4 7 8 1 8 8
+#

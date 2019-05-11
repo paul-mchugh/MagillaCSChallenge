@@ -3,6 +3,7 @@
 #include <list>
 #include "Graph.h"
 #include "EdgeSequence.h"
+#include "TextGraphParser.h"
 
 void dfsPrint(Graph &g);
 Graph generateStandardTree();
@@ -10,15 +11,47 @@ void printOutputSequences(Graph g);
 
 int main(int argc, char *argv[])
 {
-	std::cout << "Magilla CS Coding Challenge" << std::endl;
+	std::cout << "Magilla CS Coding Challenge, By Paul McHugh" << std::endl;
 	
-	if (argc!=2)
+	if (argc>3)
 	{
-		std::cout << "Usage: " << std::string(argv[0]) << " <input file>" << std::endl;
+		std::cout << "Usage: " << std::string(argv[0]) << " <input file> -v" << std::endl;
 	}
 	
-	Graph g = generateStandardTree();
+	Graph g;
 	
+	if(argc==1 || (argc>1 && std::string("std")==argv[1]))
+	{
+		g = generateStandardTree();
+	}
+	else if (argc>1)
+	{
+		try
+		{
+			g = TextGraphParser::readGraphFromFile(argv[1]);
+		}
+		catch(std::runtime_error &e)
+		{
+			std::cerr << e.what() << std::endl;
+			exit(1);
+		}
+	}
+	
+	
+	if(!TextGraphParser::validateGraphAsBinaryTree(g))
+	{
+		std::cout << "Graph from file is not a binary tree" << std::endl;
+		exit(1);
+		
+	}
+	
+	if(argc==3&&std::string("-v")==argv[2])
+	{
+		std::cout << "Printing dfs traversal of tree being sequenced:" << std::endl;
+		dfsPrint(g);
+	}
+	
+	std::cout << "Printing repeated sequences found in tree:" << std::endl;
 	printOutputSequences(g);
 	
 	return 0;
@@ -94,13 +127,13 @@ void printOutputSequences(Graph g)
 			//if this start edge is already known then don add it
 			if(nextEdgeSet.size()<equivalentEdges[repEdge].size()&&knownStartEdges.count(repEdge)==0)
 			{
-				//mark this edge as a known start edge
-				knownStartEdges.insert(repEdge);
 				//create the new sequence
 				EdgeSequence newSequence;
 				newSequence.pushEdgeGroup(equivalentEdges[repEdge]);
 				workList.push_front(newSequence);
 			}
+			//mark this edge as a known start edge
+			knownStartEdges.insert(repEdge);
 			
 			if(currentSet.size()==nextEdgeSet.size())
 			{
@@ -120,6 +153,8 @@ void printOutputSequences(Graph g)
 					extSeq.pushEdgeGroup(nextEdgeSet);
 					workList.push_front(extSeq);
 				}
+				//a sequence has been completed if the nextEdgeSet is smaller than the currentSet
+				if(nextEdgeSet.size()<currentSet.size()) sequenceCompleted = true;
 			}
 		}
 		if(sequenceCompleted)

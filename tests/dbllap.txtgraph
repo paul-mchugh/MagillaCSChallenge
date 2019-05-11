@@ -1,0 +1,25 @@
+rt(1)       :l,r
+l(2)        :ll
+ll(1)       :lll
+lll(2)      :llll
+llll(1)     :lllll
+lllll(2)    :llllll
+llllll(1)   :
+r(3)        :rr
+rr(2)       :rrr
+rrr(1)      :
+#represents the tree
+#
+#                   1
+#                  / \
+#                 2   3
+#                /     \
+#               1       2
+#              /         \
+#             2           1
+#            /
+#           1
+#          /
+#         2
+#        /
+#       1

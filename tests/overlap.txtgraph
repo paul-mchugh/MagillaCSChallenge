@@ -1,0 +1,24 @@
+rt(6)       :l,r
+l(4)        :ll
+ll(6)       :lll,llr
+lll(4)      :llll
+llll(6)     :
+llr(3)      :
+r(2)        :rl,rr
+rl(1)       :
+rr(1)       :rrl,rrr
+rrl(3)      :
+rrr(6)      :rrrl
+rrrl(2)     :
+#represents the tree
+#
+#               6
+#              / \
+#             4   2
+#            /   / \
+#           6   1   1
+#          / \     / \
+#         4   3   3   6
+#        /           /
+#       6           2
+#
