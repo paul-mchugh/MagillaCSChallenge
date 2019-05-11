@@ -94,6 +94,11 @@ Graph TextGraphParser::readGraphFromFile(std::string inFile)
 		Vertex *src = vertexNameMapping[line.name];
 		for(std::string childName : line.children)
 		{
+			if(vertexNameMapping.count(childName)==0)
+			{
+				std::cerr << "Invalid input vertex \'" << childName << "\' doesn't exist." << std::endl;
+				continue;
+			}
 			Vertex *dst = vertexNameMapping[childName];
 			g.addEdge(*src,*dst);
 		}
