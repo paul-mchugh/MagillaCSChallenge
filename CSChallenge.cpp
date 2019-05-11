@@ -1,5 +1,8 @@
 #include <iostream>
+#include <stack>
+#include <list>
 #include "Graph.h"
+#include "EdgeSequence.h"
 
 void dfsPrint(Graph &g);
 Graph generateStandardTree();
@@ -26,11 +29,11 @@ void printOutputSequences(Graph g)
 	//first we need to cull the edges the edges which are non-duplicate and therefore not part of a sequence
 	std::set<Edge> edges = g.getEdgeSet();
 	//we are using logical edges here because I want to use different comparison functions for this map that treat edges between same labeled edges as the same
-	std::map<LogicalEdge,int> edgeMultiplicity;
-	//in this loop we take a count of howmany logically equivalent edges exist
+	std::map<Edge,int,LogicallyLess> edgeMultiplicity;
+	//in this loop we take a count of how many logically equivalent edges exist
 	for (Edge edge : edges)
 	{
-		LogicalEdge &logicalEdge = static_cast<LogicalEdge&> (edge);
+		Edge &logicalEdge = static_cast<Edge&> (edge);
 		++edgeMultiplicity[logicalEdge];
 	}
 	//and here we remove the multiplicity 1 logical edges
@@ -45,7 +48,89 @@ void printOutputSequences(Graph g)
 	//invert the graph
 	g.invert();
 	
-	dfsPrint(g);
+	edges = g.getEdgeSet();
+	//this map stores groups of edges that have the same source and destination labels
+	std::map<Edge, std::set<Edge>, LogicallyLess> equivalentEdges;
+	//copy the edges into sets of edges that have the same source label as the key to the mapping
+	for(Edge edge : edges)
+	{
+		equivalentEdges[edge].insert(edge);
+	}
+	//knownStartEdges store a list of already discovered start edges, so we don't double count them
+	std::set<Edge,LogicallyLess> knownStartEdges;
+	std::list<EdgeSequence> workList;
+	std::list<EdgeSequence> doneList;
+	//get heads set so we know which edges to start the trace with
+	for(Vertex* head : g.getHeads())
+	{
+		//get the sequences corresponding to the heads, make the incomplete sequence and add it to the work list
+		//there is no need to check to see if the adjacency list is empty because we know this has a head as source
+		std::set<Edge> startEdgeSet = equivalentEdges[*head->getAdjacentEdges().begin()];
+		//check to make sure we are not double (or triple etc) counting an edge
+		if(knownStartEdges.count(*startEdgeSet.begin())==0)
+		{
+			knownStartEdges.insert(*startEdgeSet.begin());
+			EdgeSequence sequenceStart;
+			sequenceStart.pushEdgeGroup(startEdgeSet);
+			workList.insert(workList.begin(),sequenceStart);
+		}
+	}
+	
+	//remove incomplete sequences from the work list add to them and put them back in the done list
+	while (!workList.empty())
+	{
+		//pop EdgeSequence off workList
+		EdgeSequence seq = *workList.begin();
+		workList.pop_front();
+		
+		//pull next edge sets out and extend/clone the sequences
+		std::list<std::set<Edge>> nextEdgeGroups = seq.getFollowingEdgeGroups();
+		std::set<Edge> &currentSet = seq.peekEdgeGroup();
+		bool sequenceCompleted = true;
+		for (const std::set<Edge> &nextEdgeSet : nextEdgeGroups)
+		{
+			Edge repEdge = *nextEdgeSet.begin();//we don't need to check for nextEdgeSet size b/c the set wouldn't have been created if it was empty
+			//if there are more edges that are logically equivalent in the full graph then there are edges in the nextSet then we need to create a new search sequence
+			//if this start edge is already known then don add it
+			if(nextEdgeSet.size()<equivalentEdges[repEdge].size()&&knownStartEdges.count(repEdge)==0)
+			{
+				//mark this edge as a known start edge
+				knownStartEdges.insert(repEdge);
+				//create the new sequence
+				EdgeSequence newSequence;
+				newSequence.pushEdgeGroup(equivalentEdges[repEdge]);
+				workList.push_front(newSequence);
+			}
+			
+			if(currentSet.size()==nextEdgeSet.size())
+			{
+				//if all the edges in our edge group have edges in the next group then we can just push edge set onto the
+				//sequence, push this partial sequence to the work list, and unset set sequence completed
+				sequenceCompleted = false;
+				seq.pushEdgeGroup(nextEdgeSet);
+				workList.push_front(seq);
+			}
+			else
+			{
+				//this sequence is splitting up into smaller sequences (or is done) so we set done and (potentially) add extended sequences to the work List
+				if(nextEdgeSet.size()>1)
+				{
+					sequenceCompleted = false;
+					EdgeSequence extSeq(seq);
+					extSeq.pushEdgeGroup(nextEdgeSet);
+					workList.push_front(extSeq);
+				}
+			}
+		}
+		if(sequenceCompleted)
+			doneList.push_front(seq);
+	}
+	
+	//Print out the sequences
+	for(EdgeSequence seq : doneList)
+	{
+		std::cout << seq.toStringRepresentation() << std::endl;
+	}
 }
 
 Graph generateStandardTree()
