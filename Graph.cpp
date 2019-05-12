@@ -238,11 +238,6 @@ Vertex &Graph::createVertex(int label)
 	return *vertexSet[id];
 }
 
-Vertex &Graph::getVertexByUID(int uid)
-{
-	return *vertexSet[uid];
-}
-
 bool Graph::removeVertex(Vertex &v)
 {
 	if (vertexSet.count(v.uid)==1)

@@ -79,7 +79,6 @@ public:
 	bool removeEdge(Edge e);
 	void removeEdgeSet(std::set<Edge> edgeSet);
 	Vertex& createVertex(int label);
-	Vertex& getVertexByUID(int uid);
 	bool removeVertex(Vertex &v);
 	void removeIsolatedVertices(); //this method removes all vertices that have an in degree and out degree of 0
 	void invert();
